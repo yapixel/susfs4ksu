@@ -1,0 +1,8 @@
+*.orig
+*.rej
+*~
+*.swp
+out/
+build/
+libs/
+obj/
