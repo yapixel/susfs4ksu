@@ -4,7 +4,7 @@ An addon root hiding kernel patches and userspace module for KernelSU, ported an
 
 ## Features
 - **SuSFS Version**: `v2.3.0`
-- **Linux Kernel**: `3.10.y` (tested with Xiaomi MSM8992 libra/aqua, Greenforce Clang 22, ThinLTO)
+- **Linux Kernel**: `3.10.y` (tested with Xiaomi Mi 4c MSM8992 libra, Greenforce Clang 22, ThinLTO)
 - **KernelSU Support**: Compatible with `backslashxx/KernelSU` and non-GKI manual hook trees
 - **De-inlined Architecture**: All internal functions de-inlined to prevent compiler bloat and inline-overflow under modern LLVM / ThinLTO
 - **Full Features**:
