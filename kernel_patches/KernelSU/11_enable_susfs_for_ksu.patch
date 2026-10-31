@@ -3,22 +3,22 @@ Date: Fri, 30 Oct 2026 05:49:43 -0700
 Subject: [PATCH] Enable SUSFS for backslashxx KernelSU
 
 ---
- Kconfig                |   94 ++++++++++++++++++++++++++++++++++++++++++++++++
- hook/setuid_hook.c     |   38 +++++++++++++++++++
- ksu.c                  |    8 ++++
- manager/pkg_observer.c |    6 +++
- selinux/rules.c        |    3 ++
- selinux/selinux.c      |   94 ++++++++++++++++++++++++++++++++++++++++++++++++
- selinux/selinux.h      |   10 +++++
- supercall/dispatch.c   |    7 ++++
- supercall/supercall.c  |   89 +++++++++++++++++++++++++++++++++++++++++++++
+ Kconfig                | 94 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ hook/setuid_hook.c     | 38 ++++++++++++++++++++
+ ksu.c                  |  8 +++++
+ manager/pkg_observer.c |  6 ++++
+ selinux/rules.c        |  3 ++
+ selinux/selinux.c      | 94 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ selinux/selinux.h      | 10 ++++++
+ supercall/dispatch.c   |  7 ++++
+ supercall/supercall.c  | 89 +++++++++++++++++++++++++++++++++++++++++++++++
  9 files changed, 349 insertions(+)
 
 diff --git a/Kconfig b/Kconfig
-index e1d73e7fd7a..50912a15bc2 100644
+index c69bc26..93cd68b 100644
 --- a/Kconfig
 +++ b/Kconfig
-@@ -151,4 +151,98 @@ config KSU_HEURISTIC_IN_TREE_BUILD
+@@ -143,4 +143,98 @@ config KSU_HEURISTIC_IN_TREE_BUILD
  	help
  	  Note: if youre building out-of-tree, configure by editing ksu.c #defines instead.
  
@@ -118,7 +118,7 @@ index e1d73e7fd7a..50912a15bc2 100644
 +
  endmenu
 diff --git a/hook/setuid_hook.c b/hook/setuid_hook.c
-index 925798048a8..4d169f76361 100644
+index 9257980..4d169f7 100644
 --- a/hook/setuid_hook.c
 +++ b/hook/setuid_hook.c
 @@ -1,3 +1,33 @@
@@ -172,10 +172,10 @@ index 925798048a8..4d169f76361 100644
  
  install_ksu_fd:
 diff --git a/ksu.c b/ksu.c
-index 1bb5a2b9a7e..5c7011a95c4 100644
+index 40db187..db31803 100644
 --- a/ksu.c
 +++ b/ksu.c
-@@ -32,6 +32,10 @@
+@@ -30,6 +30,10 @@
  #include "avc.h"
  #endif
  
@@ -186,7 +186,7 @@ index 1bb5a2b9a7e..5c7011a95c4 100644
  // uapi
  #include "include/uapi/app_profile.h"
  #include "include/uapi/feature.h"
-@@ -291,6 +295,10 @@ static int __init kernelsu_init(void)
+@@ -285,6 +289,10 @@ static int __init kernelsu_init(void)
  
  	ksu_allowlist_init();
  	ksu_throne_tracker_init();
@@ -198,7 +198,7 @@ index 1bb5a2b9a7e..5c7011a95c4 100644
  	ksu_file_wrapper_init();
  	ksu_preinit_init();
 diff --git a/manager/pkg_observer.c b/manager/pkg_observer.c
-index 8a7d780c334..1aaa0a25393 100644
+index 8a7d780..1aaa0a2 100644
 --- a/manager/pkg_observer.c
 +++ b/manager/pkg_observer.c
 @@ -53,6 +53,9 @@ static void ksu_rename_observer_slow(struct dentry *old_dentry, struct dentry *n
@@ -222,7 +222,7 @@ index 8a7d780c334..1aaa0a25393 100644
  
  slow_path:
 diff --git a/selinux/rules.c b/selinux/rules.c
-index 07b9717d87d..a033260cec9 100644
+index 07b9717..a033260 100644
 --- a/selinux/rules.c
 +++ b/selinux/rules.c
 @@ -23,6 +23,9 @@ static void reset_avc_cache()
@@ -236,7 +236,7 @@ index 07b9717d87d..a033260cec9 100644
  
  #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
 diff --git a/selinux/selinux.c b/selinux/selinux.c
-index 17b241644f3..6654176d279 100644
+index 17b2416..6654176 100644
 --- a/selinux/selinux.c
 +++ b/selinux/selinux.c
 @@ -241,3 +241,97 @@ void escape_to_root_for_adb_root(void)
@@ -338,7 +338,7 @@ index 17b241644f3..6654176d279 100644
 +}
 +#endif // #ifdef CONFIG_KSU_SUSFS
 diff --git a/selinux/selinux.h b/selinux/selinux.h
-index e1fdb7e6dda..6b33017563e 100644
+index e1fdb7e..6b33017 100644
 --- a/selinux/selinux.h
 +++ b/selinux/selinux.h
 @@ -42,4 +42,14 @@ void escape_to_root_for_adb_root();
@@ -357,7 +357,7 @@ index e1fdb7e6dda..6b33017563e 100644
 +#endif // #ifdef CONFIG_KSU_SUSFS
  #endif
 diff --git a/supercall/dispatch.c b/supercall/dispatch.c
-index 317d2168533..a35e3e83cd8 100644
+index 317d216..a35e3e8 100644
 --- a/supercall/dispatch.c
 +++ b/supercall/dispatch.c
 @@ -1,3 +1,7 @@
@@ -379,7 +379,7 @@ index 317d2168533..a35e3e83cd8 100644
  		break;
  	}
 diff --git a/supercall/supercall.c b/supercall/supercall.c
-index 59ec582f5d2..75d34caeaf9 100644
+index 59ec582..75d34ca 100644
 --- a/supercall/supercall.c
 +++ b/supercall/supercall.c
 @@ -1,3 +1,6 @@

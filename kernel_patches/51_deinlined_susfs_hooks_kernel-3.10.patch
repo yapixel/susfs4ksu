@@ -1308,7 +1308,7 @@ index 6326ec6..c74e355 100644
  	return 0;
  }
  
-@@ -314,10 +350,20 @@ retry:
+@@ -318,10 +354,20 @@ retry:
  			error = security_inode_readlink(path.dentry);
  			if (!error) {
  				touch_atime(&path);
