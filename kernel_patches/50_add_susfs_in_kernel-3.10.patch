@@ -1,5 +1,31 @@
+From: yapixel <yapixel@users.noreply.github.com>
+Date: Fri, 30 Oct 2026 05:49:43 -0700
+Subject: [PATCH] SUSFS de-inlined hooks for kernel-3.10
+
+---
+ fs/Makefile            |    1 
+ fs/ioprio.c            |   12 ++
+ fs/namei.c             |   71 ++++++++++++-
+ fs/namespace.c         |  264 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/notify/fdinfo.c     |   26 +++++
+ fs/proc/base.c         |   30 +++++
+ fs/proc/cmdline.c      |   12 ++
+ fs/proc/fd.c           |   75 ++++++++++++++
+ fs/proc/task_mmu.c     |   91 +++++++++++++++++
+ fs/proc_namespace.c    |   51 +++++++++
+ fs/readdir.c           |  113 +++++++++++++++++++++
+ fs/stat.c              |   50 +++++++++
+ fs/statfs.c            |   79 ++++++++++++++
+ fs/super.c             |   25 +++++
+ include/linux/dcache.h |    8 +
+ kernel/kallsyms.c      |   28 +++++
+ kernel/sys.c           |   40 ++++++-
+ mm/memory.c            |   10 ++
+ security/selinux/avc.c |   22 ++++
+ 19 files changed, 991 insertions(+), 17 deletions(-)
+
 diff --git a/fs/Makefile b/fs/Makefile
-index da2f2c9f5f8..08f51282078 100644
+index da2f2c9..08f5128 100644
 --- a/fs/Makefile
 +++ b/fs/Makefile
 @@ -20,6 +20,7 @@ obj-y +=	no-block.o
@@ -11,7 +37,7 @@ index da2f2c9f5f8..08f51282078 100644
  obj-$(CONFIG_BLK_DEV_INTEGRITY) += bio-integrity.o
  obj-y				+= notify/
 diff --git a/fs/ioprio.c b/fs/ioprio.c
-index 563435684c3..cde3b3ac3a8 100644
+index 5634356..cde3b3a 100644
 --- a/fs/ioprio.c
 +++ b/fs/ioprio.c
 @@ -29,6 +29,10 @@
@@ -48,7 +74,7 @@ index 563435684c3..cde3b3ac3a8 100644
  				user = current_user();
  			else
 diff --git a/fs/namei.c b/fs/namei.c
-index 00d12a1403c..d0ce6c3f914 100644
+index 00d12a1..d0ce6c3 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -36,6 +36,17 @@
@@ -186,7 +212,7 @@ index 00d12a1403c..d0ce6c3f914 100644
  	if (dentry->d_inode->i_op->put_link)
  		dentry->d_inode->i_op->put_link(dentry, &nd, cookie);
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 11a33cea9c0..fc9318f6316 100644
+index 11a33ce..6d785a4 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -23,9 +23,21 @@
@@ -465,18 +491,19 @@ index 11a33cea9c0..fc9318f6316 100644
  	if (!mnt)
  		return ERR_PTR(-ENOMEM);
  
-@@ -846,6 +1062,10 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+@@ -846,6 +1062,11 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
  	}
  
  	mnt->mnt.mnt_flags = old->mnt.mnt_flags & ~MNT_WRITE_HOLD;
 +#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
++	mnt->mnt.mnt_flags &= ~VFSMOUNT_MNT_FLAGS_KSU_UNSHARED_MNT;
 +	if (unlikely(is_mnt_ksu_unshared))
 +		mnt->mnt.mnt_flags |= VFSMOUNT_MNT_FLAGS_KSU_UNSHARED_MNT;
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
  	/* Don't allow unprivileged users to change mount flags */
  	if (flag & CL_UNPRIVILEGED) {
  		mnt->mnt.mnt_flags |= MNT_LOCK_ATIME;
-@@ -2513,6 +2733,9 @@ static struct mnt_namespace *dup_mnt_ns(struct mnt_namespace *mnt_ns,
+@@ -2513,6 +2734,9 @@ static struct mnt_namespace *dup_mnt_ns(struct mnt_namespace *mnt_ns,
  	copy_flags = CL_COPY_ALL | CL_EXPIRE;
  	if (user_ns != mnt_ns->user_ns)
  		copy_flags |= CL_SHARED_TO_SLAVE | CL_UNPRIVILEGED;
@@ -486,7 +513,7 @@ index 11a33cea9c0..fc9318f6316 100644
  	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
  	if (IS_ERR(new)) {
  		namespace_unlock();
-@@ -3024,3 +3247,43 @@ const struct proc_ns_operations mntns_operations = {
+@@ -3024,3 +3248,43 @@ const struct proc_ns_operations mntns_operations = {
  	.install	= mntns_install,
  	.inum		= mntns_inum,
  };
@@ -531,7 +558,7 @@ index 11a33cea9c0..fc9318f6316 100644
 +}
 +#endif // #ifdef CONFIG_KSU_SUSFS
 diff --git a/fs/notify/fdinfo.c b/fs/notify/fdinfo.c
-index 9d7e2b9659c..1be35ec11db 100644
+index 9d7e2b9..1be35ec 100644
 --- a/fs/notify/fdinfo.c
 +++ b/fs/notify/fdinfo.c
 @@ -12,6 +12,9 @@
@@ -582,7 +609,7 @@ index 9d7e2b9659c..1be35ec11db 100644
  				 "mask:%x ignored_mask:%x ",
  				 inode_mark->wd, inode->i_ino,
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index f9c0b7b38f1..d567c70c5e7 100644
+index f9c0b7b..d567c70 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
 @@ -93,6 +93,12 @@
@@ -644,7 +671,7 @@ index f9c0b7b38f1..d567c70c5e7 100644
  					continue;
  
 diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
-index aeaf441e17b..91243711b79 100644
+index aeaf441..9124371 100644
 --- a/fs/proc/cmdline.c
 +++ b/fs/proc/cmdline.c
 @@ -3,11 +3,23 @@
@@ -672,7 +699,7 @@ index aeaf441e17b..91243711b79 100644
  	seq_putc(m, '\n');
  	return 0;
 diff --git a/fs/proc/fd.c b/fs/proc/fd.c
-index d8eda970236..15d6440df2f 100644
+index d8eda97..15d6440 100644
 --- a/fs/proc/fd.c
 +++ b/fs/proc/fd.c
 @@ -10,10 +10,22 @@
@@ -771,7 +798,7 @@ index d8eda970236..15d6440df2f 100644
  			ret = file->f_op->show_fdinfo(m, file);
  		fput(file);
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index d672490c4bf..5f60a96c023 100644
+index d672490..5bd2500 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -19,6 +19,17 @@
@@ -833,37 +860,88 @@ index d672490c4bf..5f60a96c023 100644
  	}
  
  	/* We don't show the stack guard page in /proc/maps */
-@@ -798,6 +837,11 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
- 	bool rollup_mode;
- 	bool last_vma;
+@@ -815,12 +854,23 @@ static int show_smap(struct seq_file *m, void *v, int is_pid)
+ 	smaps_walk.private = mss;
+ 	mss->vma = vma;
+ 	/* mmap_sem is held in m_start */
++#ifdef CONFIG_KSU_SUSFS_SUS_MAP
++	if (vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file))) {
++		if (!rollup_mode)
++			return 0;
++		goto skip_walk;
++	}
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
+ 	if (vma->vm_mm && !is_vm_hugetlb_page(vma))
+ 		walk_page_range(vma->vm_start, vma->vm_end, &smaps_walk);
+ 
+ 	if (vma->vm_flags & VM_LOCKED)
+ 		mss->pss_locked += mss->pss;
  
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+	if (vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
-+		return 0;
-+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
++skip_walk:
++#endif
 +
- 	if (priv->rollup) {
- 		rollup_mode = true;
- 		mss = priv->rollup;
-@@ -1373,6 +1417,16 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+ 	if (!rollup_mode) {
+ 		show_map_vma(m, vma, is_pid);
+ 	} else if (last_vma) {
+@@ -1302,6 +1352,43 @@ static int pagemap_hugetlb_range(pte_t *pte, unsigned long hmask,
+  * determine which areas of memory are actually mapped and llseek to
+  * skip over unmapped regions.
+  */
++#ifdef CONFIG_KSU_SUSFS_SUS_MAP
++/* Caller holds mm->mmap_sem. Hidden pages have the same zero representation as
++ * unmapped holes (make_pme(PM_NOT_PRESENT)), including read length and position;
++ * never skip a walk chunk.
++ */
++static int susfs_pagemap_walk(struct mm_struct *mm, unsigned long start,
++			      unsigned long end, struct mm_walk *walk)
++{
++	struct pagemapread *pm = walk->private;
++
++	while (start < end) {
++		struct vm_area_struct *vma = find_vma(mm, start);
++		unsigned long next = end;
++		int ret;
++
++		if (vma)
++			next = min(end, start < vma->vm_start ? vma->vm_start : vma->vm_end);
++		if (vma && start >= vma->vm_start && vma->vm_file &&
++		    SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file))) {
++			pagemap_entry_t pme = make_pme(PM_NOT_PRESENT);
++
++			for (; start < next; start += PAGE_SIZE) {
++				ret = add_to_pagemap(start, &pme, pm);
++				if (ret)
++					return ret;
++			}
++		} else {
++			ret = walk_page_range(start, next, walk);
++			if (ret)
++				return ret;
++		}
++		start = next;
++	}
++	return 0;
++}
++#endif
++
+ static ssize_t pagemap_read(struct file *file, char __user *buf,
+ 			    size_t count, loff_t *ppos)
+ {
+@@ -1373,7 +1460,11 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  		if (end < start_vaddr || end > end_vaddr)
  			end = end_vaddr;
  		down_read(&mm->mmap_sem);
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+		{
-+			struct vm_area_struct *vma = find_vma(mm, start_vaddr);
-+			if (vma && vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file))) {
-+				up_read(&mm->mmap_sem);
-+				start_vaddr = end;
-+				continue;
-+			}
-+		}
-+#endif
++		ret = susfs_pagemap_walk(mm, start_vaddr, end, &pagemap_walk);
++#else
  		ret = walk_page_range(start_vaddr, end, &pagemap_walk);
++#endif
  		up_read(&mm->mmap_sem);
  		start_vaddr = end;
+ 
 diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-index 09b35d97364..eb27a9c0200 100644
+index 09b35d9..eb27a9c 100644
 --- a/fs/proc_namespace.c
 +++ b/fs/proc_namespace.c
 @@ -12,6 +12,13 @@
@@ -944,7 +1022,7 @@ index 09b35d97364..eb27a9c0200 100644
  }
  
 diff --git a/fs/readdir.c b/fs/readdir.c
-index 52d57df79f0..797964fd152 100644
+index 52d57df..797964f 100644
 --- a/fs/readdir.c
 +++ b/fs/readdir.c
 @@ -17,6 +17,11 @@
@@ -1166,7 +1244,7 @@ index 52d57df79f0..797964fd152 100644
  	return error;
  }
 diff --git a/fs/stat.c b/fs/stat.c
-index d434d8c0578..d99461757e3 100644
+index 6326ec6..c74e355 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -18,6 +18,17 @@
@@ -1230,7 +1308,7 @@ index d434d8c0578..d99461757e3 100644
  	return 0;
  }
  
-@@ -318,10 +354,20 @@ retry:
+@@ -314,10 +350,20 @@ retry:
  			error = security_inode_readlink(path.dentry);
  			if (!error) {
  				touch_atime(&path);
@@ -1252,7 +1330,7 @@ index d434d8c0578..d99461757e3 100644
  		if (retry_estale(error, lookup_flags)) {
  			lookup_flags |= LOOKUP_REVAL;
 diff --git a/fs/statfs.c b/fs/statfs.c
-index 083dc0ac914..4614aa4c6be 100644
+index 083dc0a..4614aa4 100644
 --- a/fs/statfs.c
 +++ b/fs/statfs.c
 @@ -7,8 +7,19 @@
@@ -1354,7 +1432,7 @@ index 083dc0ac914..4614aa4c6be 100644
  	error = statfs_by_dentry(path->dentry, buf);
  	if (!error)
 diff --git a/fs/super.c b/fs/super.c
-index 3ea73051a67..52132219a9d 100644
+index 3ea7305..5213221 100644
 --- a/fs/super.c
 +++ b/fs/super.c
 @@ -34,8 +34,17 @@
@@ -1399,23 +1477,26 @@ index 3ea73051a67..52132219a9d 100644
  	if (ida_pre_get(&unnamed_dev_ida, GFP_ATOMIC) == 0)
  		return -ENOMEM;
 diff --git a/include/linux/dcache.h b/include/linux/dcache.h
-index b38c95d69c1..2a849b9bb7b 100644
+index b38c95d..a5fe965 100644
 --- a/include/linux/dcache.h
 +++ b/include/linux/dcache.h
-@@ -428,6 +428,11 @@ static inline struct inode *d_inode(const struct dentry *dentry)
+@@ -428,6 +428,14 @@ static inline struct inode *d_inode(const struct dentry *dentry)
  	return dentry->d_inode;
  }
  
++#ifndef d_backing_inode
 +static inline struct inode *d_backing_inode(const struct dentry *upper)
 +{
 +	return upper->d_inode;
 +}
++#define d_backing_inode d_backing_inode
++#endif
 +
  static inline bool d_is_negative(const struct dentry *dentry)
  {
  	return (dentry->d_inode == NULL);
 diff --git a/kernel/kallsyms.c b/kernel/kallsyms.c
-index 3127ad52cdb..d4920bd96aa 100644
+index 3127ad5..d4920bd 100644
 --- a/kernel/kallsyms.c
 +++ b/kernel/kallsyms.c
 @@ -524,6 +524,10 @@ static void s_stop(struct seq_file *m, void *p)
@@ -1461,7 +1542,7 @@ index 3127ad52cdb..d4920bd96aa 100644
  		char type;
  
 diff --git a/kernel/sys.c b/kernel/sys.c
-index 70bbc444166..a6b9fe0334d 100644
+index 70bbc44..a6b9fe0 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
 @@ -178,6 +178,10 @@ out:
@@ -1538,7 +1619,7 @@ index 70bbc444166..a6b9fe0334d 100644
  	up_read(&uts_sem);
  
 diff --git a/mm/memory.c b/mm/memory.c
-index 398bd9506f9..404ec54629e 100644
+index 398bd95..2257f4a 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
 @@ -70,6 +70,9 @@
@@ -1551,21 +1632,14 @@ index 398bd9506f9..404ec54629e 100644
  
  #ifdef LAST_NID_NOT_IN_PAGE_FLAGS
  #warning Unfortunate NUMA and NUMA Balancing config, growing page-frame for last_nid.
-@@ -4118,12 +4121,20 @@ static int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
- 	void *old_buf = buf;
- 
- 	down_read(&mm->mmap_sem);
-+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+	vma = find_vma(mm, addr);
-+#endif
- 	/* ignore errors, just check how much was successfully transferred */
- 	while (len) {
- 		int bytes, ret, offset;
+@@ -4124,6 +4127,13 @@ static int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
  		void *maddr;
  		struct page *page = NULL;
  
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+		if (vma && vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
++		vma = find_vma(mm, addr);
++		if (vma && vma->vm_start <= addr && vma->vm_file &&
++		    SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
 +			break;
 +#endif
 +
@@ -1573,7 +1647,7 @@ index 398bd9506f9..404ec54629e 100644
  				write, 1, &page, &vma);
  		if (ret <= 0) {
 diff --git a/security/selinux/avc.c b/security/selinux/avc.c
-index 1f1ce63055e..faf29349b04 100644
+index 1f1ce63..faf2934 100644
 --- a/security/selinux/avc.c
 +++ b/security/selinux/avc.c
 @@ -135,6 +135,12 @@ static void avc_dump_av(struct audit_buffer *ab, u16 tclass, u32 av)
