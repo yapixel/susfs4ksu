@@ -1592,7 +1592,7 @@ index 70bbc44..a6b9fe0 100644
  
  			do_each_thread(g, p) {
  				if (uid_eq(task_uid(p), uid)) {
-@@ -1386,12 +1400,24 @@ static int override_release(char __user *release, size_t len)
+@@ -1391,12 +1405,24 @@ static int override_release(char __user *release, size_t len)
  	return ret;
  }
  
