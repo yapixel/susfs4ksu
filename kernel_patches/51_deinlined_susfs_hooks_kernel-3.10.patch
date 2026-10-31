@@ -1308,7 +1308,7 @@ index 6326ec6..c74e355 100644
  	return 0;
  }
  
-@@ -318,10 +354,20 @@ retry:
+@@ -314,10 +350,20 @@ retry:
  			error = security_inode_readlink(path.dentry);
  			if (!error) {
  				touch_atime(&path);
@@ -1592,7 +1592,7 @@ index 70bbc44..a6b9fe0 100644
  
  			do_each_thread(g, p) {
  				if (uid_eq(task_uid(p), uid)) {
-@@ -1391,12 +1405,24 @@ static int override_release(char __user *release, size_t len)
+@@ -1386,12 +1400,24 @@ static int override_release(char __user *release, size_t len)
  	return ret;
  }
  
