@@ -112,13 +112,13 @@ index 925798048a8..4d169f76361 100644
 +
 +extern struct work_struct susfs_extra_works;
 +
-+static inline void ksu_handle_extra_susfs_work(void)
++static void ksu_handle_extra_susfs_work(void)
 +{
 +	if (!work_pending(&susfs_extra_works))
 +		schedule_work(&susfs_extra_works);
 +}
 +
-+static inline void handle_susfs_setresuid(struct cred *new, const struct cred *old, uid_t new_uid, bool is_zygote_next)
++static void handle_susfs_setresuid(struct cred *new, const struct cred *old, uid_t new_uid, bool is_zygote_next)
 +{
 +	bool is_isolated = is_isolated_process(new_uid);
 +	bool should_umount = likely((is_appuid(new_uid) || new_uid == WEBVIEW_ZYGOTE_UID) && ksu_uid_should_umount(new_uid));
@@ -240,7 +240,7 @@ index 17b241644f3..6654176d279 100644
 +u32 susfs_zygote_next_sid __read_mostly = 0;
 +u32 susfs_priv_app_sid __read_mostly = 0;
 +
-+static inline void susfs_set_sid(const char *secctx_name, u32 *out_sid)
++static void susfs_set_sid(const char *secctx_name, u32 *out_sid)
 +{
 +	int err;
 +

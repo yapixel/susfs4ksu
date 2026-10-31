@@ -227,7 +227,7 @@ static void susfs_run_sus_path_loop(void) {
 	revert_creds(saved);
 }
 
-static inline bool is_i_uid_not_allowed(uid_t i_uid) {
+static bool is_i_uid_not_allowed(uid_t i_uid) {
 	return likely(__kuid_val(current_uid()) != i_uid);
 }
 
