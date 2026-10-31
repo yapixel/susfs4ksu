@@ -21,8 +21,8 @@ An addon root hiding kernel patches and userspace module for KernelSU, ported an
 ## Repository Structure
 ```text
 kernel_patches/
-  ├── 51_deinlined_susfs_hooks_kernel-3.10.patch # Canonical de-inlined hooks for Linux 3.10
-  ├── 50_add_susfs_in_kernel-3.10.patch       # Compatibility copy for existing workflows
+  ├── 51_deinlined_susfs_hooks_kernel-3.10.patch # De-inlined hooks, for trees with manual KSU hooks
+  ├── 50_add_susfs_in_kernel-3.10.patch          # Same hooks, for trees without manual KSU hooks (LSM)
   ├── KernelSU/
   │   ├── 11_enable_susfs_for_ksu.patch      # Canonical xxKSU driver patch
   │   └── 10_enable_susfs_for_ksu.patch      # Compatibility copy for KernelSU
@@ -58,7 +58,7 @@ patch -p1 < <PATH_TO_SUSFS4KSU>/kernel_patches/KernelSU/11_enable_susfs_for_ksu.
 ```bash
 cd <KERNEL_ROOT>
 patch -p1 < <PATH_TO_SUSFS4KSU>/kernel_patches/51_deinlined_susfs_hooks_kernel-3.10.patch
-# Or use 50_add_susfs_in_kernel-3.10.patch for compatibility
+# Without manual KSU hooks (LSM mode), use 50_add_susfs_in_kernel-3.10.patch instead
 ```
 
 ### 4. Enable Kconfig Options
