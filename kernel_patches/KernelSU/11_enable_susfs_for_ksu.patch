@@ -225,8 +225,8 @@ diff --git a/selinux/rules.c b/selinux/rules.c
 index 07b9717..a033260 100644
 --- a/selinux/rules.c
 +++ b/selinux/rules.c
-@@ -23,6 +23,9 @@ static void reset_avc_cache()
- 	selinux_status_update_policyload(&selinux_state, 0);
+@@ -23,6 +23,9 @@ static void reset_avc_cache(u32 seqno)
+ 	selinux_status_update_policyload(&selinux_state, seqno);
  #endif
  	selinux_xfrm_notify_policyload();
 +#ifdef CONFIG_KSU_SUSFS
