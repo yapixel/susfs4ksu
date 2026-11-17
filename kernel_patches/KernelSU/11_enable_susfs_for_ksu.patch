@@ -15,10 +15,10 @@ Subject: [PATCH] Enable SUSFS for backslashxx KernelSU
  9 files changed, 349 insertions(+)
 
 diff --git a/Kconfig b/Kconfig
-index b327a50..91d2241 100644
+index 777bcf1..8ae3559 100644
 --- a/Kconfig
 +++ b/Kconfig
-@@ -136,4 +136,98 @@ config KSU_HEURISTIC_IN_TREE_BUILD
+@@ -123,4 +123,98 @@ config KSU_HEURISTIC_IN_TREE_BUILD
  	help
  	  Note: if youre building out-of-tree, configure by editing ksu.c #defines instead.
  
@@ -172,10 +172,10 @@ index 9257980..53512b8 100644
  
  install_ksu_fd:
 diff --git a/ksu.c b/ksu.c
-index 9be80bf..3ad276d 100644
+index c459422..f7a625c 100644
 --- a/ksu.c
 +++ b/ksu.c
-@@ -29,6 +29,10 @@
+@@ -30,6 +30,10 @@
  #include "avc.h"
  #endif
  
@@ -186,7 +186,7 @@ index 9be80bf..3ad276d 100644
  // uapi
  #include "include/uapi/app_profile.h"
  #include "include/uapi/feature.h"
-@@ -280,6 +284,10 @@ static int __init kernelsu_init(void)
+@@ -270,6 +274,10 @@ static int __init kernelsu_init(void)
  
  	ksu_allowlist_init();
  	ksu_throne_tracker_init();
