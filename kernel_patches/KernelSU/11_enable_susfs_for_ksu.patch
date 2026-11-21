@@ -186,7 +186,7 @@ index c459422..f7a625c 100644
  // uapi
  #include "include/uapi/app_profile.h"
  #include "include/uapi/feature.h"
-@@ -270,6 +274,10 @@ static int __init kernelsu_init(void)
+@@ -274,6 +278,10 @@ static int __init kernelsu_init(void)
  
  	ksu_allowlist_init();
  	ksu_throne_tracker_init();
